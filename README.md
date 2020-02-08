@@ -1,6 +1,6 @@
 # IDownvotedBecauseUI
 
-<img alt="GitHub issues" src="https://img.shields.io/github/issues-raw/TwentyFourMinutes/IDownvotedBecauseEx?style=flat-square"> <img alt="GitHub release (latest by date including pre-releases)" src="https://img.shields.io/github/v/release/TwentyFourMinutes/IDownvotedBecauseEx?include_prereleases&style=flat-square"> ![GitHub](https://img.shields.io/github/license/TwentyFourMinutes/IDownvotedBecauseEx?style=flat-square)
+<img alt="GitHub issues" src="https://img.shields.io/github/issues-raw/TwentyFourMinutes/IDownvotedBecauseUI?style=flat-square"> <img alt="GitHub release (latest by date including pre-releases)" src="https://img.shields.io/github/v/release/TwentyFourMinutes/IDownvotedBecauseUI?include_prereleases&style=flat-square"> ![GitHub](https://img.shields.io/github/license/TwentyFourMinutes/IDownvotedBecauseUI?style=flat-square)
 
 Provides simple UI to the StackOverflow website, which enables you to give a quick explanation on why you downvoted the question. **This user-script was made possible by the great [idownvotedbecau.se](https://idownvotedbecau.se/) website from [Will Sullivan](https://github.com/WillSullivan).**
 
@@ -20,7 +20,7 @@ _I downvoted, because it seems like that [no or less effort in debugging the cod
 
 2. Install the userscript by clicking the install link below. 
 
-   <kbd>[install](https://github.com/TwentyFourMinutes/IDownvotedBecauseEx/blob/master/src/core.js)</kbd>
+   <kbd>[install](https://github.com/TwentyFourMinutes/IDownvotedBecauseUI/blob/master/src/core.js)</kbd>
 
 3. Now the next time you will click the downvote button, the pop up shown above will appear.
 
