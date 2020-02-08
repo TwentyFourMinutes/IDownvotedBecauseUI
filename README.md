@@ -18,10 +18,7 @@ _I downvoted, because it seems like that [no or less effort in debugging the cod
 
 1. Install a userscript manager; these are free extensions available for all popular browsers that allow you to manage and install userscripts. I'd recommend using [Tampermonkey](https://tampermonkey.net/) for Chromium and Firefox based browsers.
 
-2. Install the userscript by clicking the install link below. 
-
-   <kbd>[install](https://github.com/TwentyFourMinutes/IDownvotedBecauseUI/blob/master/src/core.js)</kbd>
-
+2. Install the userscript by clicking [`here`](https://github.com/TwentyFourMinutes/IDownvotedBecauseUI/raw/master/src/core.user.js). 
 3. Now the next time you will click the downvote button, the pop up shown above will appear.
 
 ## Notes
