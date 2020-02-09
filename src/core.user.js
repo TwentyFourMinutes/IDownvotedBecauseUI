@@ -7,6 +7,7 @@
 // @description  A StackOverflow user script which adds a simple UI to justify the reason of the downvote.
 // @author       Twenty (https://github.com/TwentyFourMinutes, https://stackoverflow.com/users/10070647/twenty)
 // @match        https://*.stackoverflow.com/questions/*
+// @match        https://*.stackoverflow.com/review*
 // @grant        none
 // ==/UserScript==
 
