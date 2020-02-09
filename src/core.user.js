@@ -138,7 +138,6 @@
             </ul>
         </div>
         <div class="popup-actions">
-    
             <div style="float:right">
                 <input type="button" class="popup-submit" style="float:none; margin-left:5px;" value="Cancel">
                 <input type="submit" class="popup-submit" style="float:none; margin-left:5px;" value="Downvote Question">
@@ -152,6 +151,11 @@
     menu.setAttribute("data-controller", "se-draggable");
 
     downvoteButton.addEventListener("click", () => {
+
+        if (downvoteButton.getAttribute("aria-pressed") == true) {
+            return;
+        }
+
         postMenu.appendChild(menu);
 
         let popUp = document.getElementById("popup-downvote-post");
