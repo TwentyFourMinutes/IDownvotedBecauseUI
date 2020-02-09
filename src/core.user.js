@@ -3,7 +3,7 @@
 // @namespace    https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepage     https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepageURL  https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
-// @version      v1.0
+// @version      v1.1
 // @description  A StackOverflow user script which adds a simple UI to justify the reason of the downvote.
 // @author       Twenty (https://github.com/TwentyFourMinutes, https://stackoverflow.com/users/10070647/twenty)
 // @match        https://*.stackoverflow.com/questions/*
