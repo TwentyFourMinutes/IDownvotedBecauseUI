@@ -203,7 +203,10 @@
             document.removeEventListener("keydown", keyDown);
         }
 
-        cancelButton.onclick = removePopUp;
+        cancelButton.onclick = () => {
+            downvoteButton.click();
+            removePopUp();
+        };
         popupClose.onclick = removePopUp;
 
         function onClick(e) {
