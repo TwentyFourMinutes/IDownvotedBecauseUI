@@ -182,16 +182,18 @@
 
         submitButton.addEventListener("click", (e) => {
             if (selected.value != "no-response") {
-                addComment.click();
+                if (!commentUpIfCommentExist()) {
+                    addComment.click();
 
-                let commentContainer = document.querySelector('.question .comments textarea');
-                let commentSubmit = document.querySelector('.question .comments button');
+                    let commentContainer = document.querySelector('.question .comments textarea');
+                    let commentSubmit = document.querySelector('.question .comments button');
 
-                commentContainer.innerText = selected.dataset.sentence.toString().format(selected.value);
+                    commentContainer.innerText = selected.dataset.sentence.toString().format(selected.value);
 
-                setTimeout(() => {
-                    commentSubmit.click();
-                }, 100);
+                    setTimeout(() => {
+                        commentSubmit.click();
+                    }, 100);
+                }
             }
             e.preventDefault();
             removePopUp();
@@ -227,6 +229,20 @@
 
         document.addEventListener("keydown", keyDown);
     });
+
+    function commentUpIfCommentExist(url) {
+        let comments = document.querySelectorAll('.question .comments .comment');
+
+        comments.forEach(elem => {
+            if (elem.innerHTML.includes(url)) {
+                let upVoteButton = elem.querySelector("a.comment-up");
+                upVoteButton.click();
+                return true;
+            }
+        });
+
+        return false;
+    }
 
     String.prototype.format = function () {
         let args = arguments;
