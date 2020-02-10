@@ -3,7 +3,7 @@
 // @namespace    https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepage     https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepageURL  https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
-// @version      v1.1
+// @version      v1.2
 // @description  A StackOverflow user script which adds a simple UI to justify the reason of the downvote.
 // @author       Twenty (https://github.com/TwentyFourMinutes, https://stackoverflow.com/users/10070647/twenty)
 // @match        https://*.stackoverflow.com/questions/*
@@ -187,7 +187,7 @@
                     addComment.click();
 
                     let commentContainer = document.querySelector('.question .comments textarea');
-                    let commentSubmit = document.querySelector('.question .comments button');
+                    let commentSubmit = document.querySelector('.question .comments button[type=submit].s-btn,s-btn__primary');
 
                     commentContainer.innerText = selected.dataset.sentence.toString().format(selected.value);
 
