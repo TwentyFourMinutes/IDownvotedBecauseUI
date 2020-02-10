@@ -6,8 +6,8 @@
 // @version      v1.2.1
 // @description  A StackOverflow user script which adds a simple UI to justify the reason of the downvote.
 // @author       Twenty (https://github.com/TwentyFourMinutes, https://stackoverflow.com/users/10070647/twenty)
-// @include        https://*stackoverflow.com/questions/*
-// @include        https://*stackoverflow.com/review/*
+// @include      https://*stackoverflow.com/questions/*
+// @include      https://*stackoverflow.com/review/*
 // @grant        none
 // ==/UserScript==
 
