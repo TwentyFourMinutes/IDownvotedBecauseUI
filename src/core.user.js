@@ -169,9 +169,9 @@
 
         downvoteButton.addEventListener("click", () => {
 
-        if (downvoteButton.getAttribute("aria-pressed") == true) {
-            return;
-        }
+            if (downvoteButton.getAttribute("aria-pressed") == "true") {
+                return;
+            }
 
             postMenu.appendChild(menu);
 
