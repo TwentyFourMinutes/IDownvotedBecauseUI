@@ -3,7 +3,7 @@
 // @namespace    https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepage     https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepageURL  https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
-// @version      v1.2
+// @version      v1.2.1
 // @description  A StackOverflow user script which adds a simple UI to justify the reason of the downvote.
 // @author       Twenty (https://github.com/TwentyFourMinutes, https://stackoverflow.com/users/10070647/twenty)
 // @include        https://*stackoverflow.com/questions/*
@@ -13,11 +13,27 @@
 
 (function () {
     'use strict';
-    let downvoteButton = document.querySelector(".question .js-vote-down-btn");
-    let postMenu = document.querySelector(".post-menu");
 
-    let menu = document.createElement("div");
-    menu.innerHTML = `
+    let observer = new MutationObserver(function (mutations, me) {
+        let btn = document.querySelector(".question .js-vote-down-btn");
+        if (btn) {
+            Core();
+            me.disconnect();
+            return;
+        }
+    });
+
+    observer.observe(document, {
+        childList: true,
+        subtree: true
+    });
+
+    function Core() {
+        let downvoteButton = document.querySelector(".question .js-vote-down-btn");
+        let postMenu = document.querySelector(".post-menu");
+
+        let menu = document.createElement("div");
+        menu.innerHTML = `
     <div class="popup-close"><a title="close this popup (or hit Esc)">×</a></div>
     <form>
         <div>
@@ -145,116 +161,117 @@
             </div>
         </div>
     </form>`;
-    menu.style.cssText = 'position: absolute; top: calc(50vh - 281px); left: calc(50% - 347px);';
-    menu.classList.add("popup");
-    menu.classList.add("responsively-horizontally-centered-legacy-popup");
-    menu.id = "popup-downvote-post";
-    menu.setAttribute("data-controller", "se-draggable");
+        menu.style.cssText = 'position: absolute; top: calc(50vh - 281px); left: calc(50% - 347px);';
+        menu.classList.add("popup");
+        menu.classList.add("responsively-horizontally-centered-legacy-popup");
+        menu.id = "popup-downvote-post";
+        menu.setAttribute("data-controller", "se-draggable");
 
-    downvoteButton.addEventListener("click", () => {
+        downvoteButton.addEventListener("click", () => {
 
         if (downvoteButton.getAttribute("aria-pressed") == true) {
             return;
         }
 
-        postMenu.appendChild(menu);
+            postMenu.appendChild(menu);
 
-        let popUp = document.getElementById("popup-downvote-post");
+            let popUp = document.getElementById("popup-downvote-post");
 
-        setTimeout(() => {
-            popUp.style.display = "block";
-        }, 10);
+            setTimeout(() => {
+                popUp.style.display = "block";
+            }, 10);
 
-        let submitButton = document.querySelector("#popup-downvote-post input[type=submit]");
-        let cancelButton = document.querySelector("#popup-downvote-post input[type=button]");
-        let popupClose = document.querySelector("#popup-downvote-post .popup-close");
-        let radios = document.querySelectorAll('#popup-downvote-post input[type=radio][name="reason"]');
-        let addComment = document.querySelector('.js-add-link.comments-link');
+            let submitButton = document.querySelector("#popup-downvote-post input[type=submit]");
+            let cancelButton = document.querySelector("#popup-downvote-post input[type=button]");
+            let popupClose = document.querySelector("#popup-downvote-post .popup-close");
+            let radios = document.querySelectorAll('#popup-downvote-post input[type=radio][name="reason"]');
+            let addComment = document.querySelector('.js-add-link.comments-link');
 
-        let selected = document.querySelector("#popup-downvote-post input[type=radio][value=no-response]");
+            let selected = document.querySelector("#popup-downvote-post input[type=radio][value=no-response]");
 
-        function changeHandler(e) {
-            selected = e.currentTarget;
-        }
+            function changeHandler(e) {
+                selected = e.currentTarget;
+            }
 
-        Array.prototype.forEach.call(radios, function (radio) {
-            radio.addEventListener('change', changeHandler);
-        });
+            Array.prototype.forEach.call(radios, function (radio) {
+                radio.addEventListener('change', changeHandler);
+            });
 
-        submitButton.addEventListener("click", (e) => {
-            if (selected.value != "no-response") {
-                if (!commentUpIfCommentExist()) {
-                    addComment.click();
+            submitButton.addEventListener("click", (e) => {
+                if (selected.value != "no-response") {
+                    if (!commentUpIfCommentExist()) {
+                        addComment.click();
 
-                    let commentContainer = document.querySelector('.question .comments textarea');
-                    let commentSubmit = document.querySelector('.question .comments button[type=submit].s-btn,s-btn__primary');
+                        let commentContainer = document.querySelector('.question .comments textarea');
+                        let commentSubmit = document.querySelector('.question .comments button[type=submit].s-btn,s-btn__primary');
 
-                    commentContainer.innerText = selected.dataset.sentence.toString().format(selected.value);
+                        commentContainer.innerText = selected.dataset.sentence.toString().format(selected.value);
 
-                    setTimeout(() => {
-                        commentSubmit.click();
-                    }, 100);
+                        setTimeout(() => {
+                            commentSubmit.click();
+                        }, 100);
+                    }
+                }
+                e.preventDefault();
+                removePopUp();
+            });
+
+            function removePopUp() {
+                postMenu.removeChild(menu);
+                document.removeEventListener("mousedown", onClick);
+                document.removeEventListener("keydown", keyDown);
+            }
+
+            cancelButton.onclick = () => {
+                downvoteButton.click();
+                removePopUp();
+            };
+            popupClose.onclick = removePopUp;
+
+            function onClick(e) {
+                let bounding = popUp.getBoundingClientRect();
+
+                if (bounding.left > e.x || bounding.left + bounding.width < e.x || bounding.top > e.y || bounding.top + bounding.height < e.y) {
+                    removePopUp();
                 }
             }
-            e.preventDefault();
-            removePopUp();
+
+            document.addEventListener("mousedown", onClick);
+
+            function keyDown(e) {
+                if (e.key == "Escape") {
+                    removePopUp();
+                }
+            }
+
+            document.addEventListener("keydown", keyDown);
         });
 
-        function removePopUp() {
-            postMenu.removeChild(menu);
-            document.removeEventListener("mousedown", onClick);
-            document.removeEventListener("keydown", keyDown);
+        function commentUpIfCommentExist(url) {
+            let comments = document.querySelectorAll('.question .comments .comment');
+
+            comments.forEach(elem => {
+                if (elem.innerHTML.includes(url)) {
+                    let upVoteButton = elem.querySelector("a.comment-up");
+                    upVoteButton.click();
+                    return true;
+                }
+            });
+
+            return false;
         }
 
-        cancelButton.onclick = () => {
-            downvoteButton.click();
-            removePopUp();
+        String.prototype.format = function () {
+            let args = arguments;
+            return this.replace(/\{\{|\}\}|\{(\d+)\}/g, function (m, n) {
+                if (m == "{{") {
+                    return "{";
+                }
+                if (m == "}}") {
+                    return "}";
+                }
+                return args[n];
+            });
         };
-        popupClose.onclick = removePopUp;
-
-        function onClick(e) {
-            let bounding = popUp.getBoundingClientRect();
-
-            if (bounding.left > e.x || bounding.left + bounding.width < e.x || bounding.top > e.y || bounding.top + bounding.height < e.y) {
-                removePopUp();
-            }
-        }
-
-        document.addEventListener("mousedown", onClick);
-
-        function keyDown(e) {
-            if (e.key == "Escape") {
-                removePopUp();
-            }
-        }
-
-        document.addEventListener("keydown", keyDown);
-    });
-
-    function commentUpIfCommentExist(url) {
-        let comments = document.querySelectorAll('.question .comments .comment');
-
-        comments.forEach(elem => {
-            if (elem.innerHTML.includes(url)) {
-                let upVoteButton = elem.querySelector("a.comment-up");
-                upVoteButton.click();
-                return true;
-            }
-        });
-
-        return false;
     }
-
-    String.prototype.format = function () {
-        let args = arguments;
-        return this.replace(/\{\{|\}\}|\{(\d+)\}/g, function (m, n) {
-            if (m == "{{") {
-                return "{";
-            }
-            if (m == "}}") {
-                return "}";
-            }
-            return args[n];
-        });
-    };
 })();
