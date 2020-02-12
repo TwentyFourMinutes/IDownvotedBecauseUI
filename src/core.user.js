@@ -141,7 +141,7 @@
                 </li>
                 <li class="" style="width: 250px">
                     <label>
-                        <input type="radio" class="js-flag-load-close " name="reason" data-sentence='I downvoted, because [the post is not written in english]([0}).' value="https://idownvotedbecau.se/wronglanguage">
+                        <input type="radio" class="js-flag-load-close " name="reason" data-sentence='I downvoted, because [the post is not written in English]({0}).' value="https://idownvotedbecau.se/wronglanguage">
                         <span class="action-name">Wrong language...</span>
                     </label>
                     <a style="margin-left: 23px" href="https://idownvotedbecau.se/wronglanguage" target="_blank">Learn more</a>
