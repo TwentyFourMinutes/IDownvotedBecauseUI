@@ -10,16 +10,19 @@
 // @include      https://*stackoverflow.com/review/*
 // @grant        none
 // ==/UserScript==
+
 (function () {
     'use strict';
+
     //#region Declarations
-    var FlagType;
-    (function (FlagType) {
-        FlagType[FlagType["Question"] = 1] = "Question";
-        FlagType[FlagType["Answer"] = 2] = "Answer";
-        FlagType[FlagType["All"] = 3] = "All";
-    })(FlagType || (FlagType = {}));
-    var downvoteReasons = [
+
+    enum FlagType {
+        Question = 1,
+        Answer = 2,
+        All = 3
+    }
+
+    const downvoteReasons: { name: string, reason: string, url: string, flagType: FlagType }[] = [
         {
             name: "Being unresponsive...",
             reason: "I downvoted, because [the OP is unresponsive]({0}).",
@@ -102,11 +105,27 @@
             flagType: FlagType.All
         }
     ];
-    var DownvoteHandler = /** @class */ (function () {
-        function DownvoteHandler(rootElement, flagType) {
-            this.eventsInitialized = false;
-            this.isOpen = false;
+
+    class DownvoteHandler {
+        public static downvoteHandlers: DownvoteHandler[] = [];
+
+        private static popupContainer: HTMLElement;
+        private static isInitialized: boolean = false;
+
+        private readonly rootElement: HTMLElement;
+        private readonly downvoteButton: HTMLElement;
+        private readonly commentSection: HTMLElement;
+        private readonly addCommentLink: HTMLElement;
+        private readonly flagType: FlagType;
+        private readonly popup: HTMLElement;
+
+        private downvoteState: boolean;
+        private eventsInitialized: boolean = false;
+        private isOpen: boolean = false;
+
+        constructor(rootElement: HTMLElement, flagType: FlagType) {
             DownvoteHandler.initialize();
+
             this.flagType = flagType;
             this.rootElement = rootElement;
             this.commentSection = this.rootElement.querySelector(".comments");
@@ -114,179 +133,253 @@
             this.addCommentLink = this.rootElement.querySelector(".js-add-link");
             this.popup = this.generatePopup();
             this.generatePopupItems();
+
             this.attachEventHandler();
+
             DownvoteHandler.downvoteHandlers.push(this);
         }
+
         //#region Static Methods
-        DownvoteHandler.initialize = function () {
+
+        private static initialize(): void {
             if (this.isInitialized)
                 return;
+
             this.popupContainer = document.querySelector(".post-menu");
+
             this.isInitialized = true;
-        };
-        DownvoteHandler.isMouseOverPopup = function (mousePos) {
-            var isHovering = DownvoteHandler.downvoteHandlers.some(function (x) {
-                var bounding = x.popup.getBoundingClientRect();
+        }
+
+        private static isMouseOverPopup(mousePos: MouseEvent): boolean {
+            let isHovering: boolean = DownvoteHandler.downvoteHandlers.some(x => {
+                let bounding: DOMRect = x.popup.getBoundingClientRect();
+
                 return x.isOpen && (bounding.left > mousePos.x || bounding.left + bounding.width < mousePos.x || bounding.top > mousePos.y || bounding.top + bounding.height < mousePos.y);
             });
+
             return isHovering;
-        };
-        DownvoteHandler.getOpenPopupCount = function () {
-            return DownvoteHandler.downvoteHandlers.filter(function (x) { return x.isOpen; }).length;
-        };
-        DownvoteHandler.closeAllPopups = function () {
-            DownvoteHandler.downvoteHandlers.forEach(function (x) {
+        }
+
+        private static getOpenPopupCount(): number {
+            return DownvoteHandler.downvoteHandlers.filter(x => x.isOpen).length;
+        }
+
+        private static closeAllPopups(): void {
+            DownvoteHandler.downvoteHandlers.forEach(x => {
                 x.closePopup.bind(x)();
             });
-        };
-        DownvoteHandler.globalMouseDownCallback = function (e) {
-            if (!DownvoteHandler.isMouseOverPopup(e)) {
+        }
+
+        private static globalMouseDownCallback(e: MouseEvent): void {
+            if(!DownvoteHandler.isMouseOverPopup(e)){
                 DownvoteHandler.closeAllPopups();
             }
-        };
-        DownvoteHandler.globalKeyDownCallback = function (e) {
-            if (e.key == "Escape") {
+        }
+        private static globalKeyDownCallback(e: KeyboardEvent): void {
+            if(e.key == "Escape"){
                 DownvoteHandler.closeAllPopups();
             }
-        };
-        DownvoteHandler.attachGlobalEvents = function () {
+        }
+
+        private static attachGlobalEvents(): void {
             document.addEventListener("mousedown", DownvoteHandler.globalMouseDownCallback);
             document.addEventListener("keydown", DownvoteHandler.globalKeyDownCallback);
-        };
-        DownvoteHandler.detatchGlobalEvents = function () {
+        }
+
+        private static detatchGlobalEvents(): void {
             document.removeEventListener("mousedown", DownvoteHandler.globalMouseDownCallback);
             document.removeEventListener("keydown", DownvoteHandler.globalKeyDownCallback);
-        };
+        }
         //#endregion
-        DownvoteHandler.prototype.generatePopup = function () {
-            var wrapper = document.createElement("div");
-            wrapper.innerHTML = "\n            <div class=\"popup-close\"><a title=\"close this popup (or hit Esc)\">\u00D7</a></div>\n            <form>\n                <div>\n                    <h2 style=\"margin-bottom:12px;\" class=\"c-move\" data-target=\"se-draggable.handle\">\n                        I am downvoting this question because...\n                    </h2>\n                    <ul class=\"action-list\" style=\"display: flex; justify-content: space-between; flex-wrap: wrap; max-width: 600px\">\n            \n                    </ul>\n                </div>\n                <div class=\"popup-actions\">\n                    <div style=\"float:right\">\n                        <input type=\"button\" id=\"popup-cancel\" class=\"popup-submit\" style=\"float:none; margin-left:5px;\" value=\"Cancel\">\n                        <input type=\"submit\" id=\"popup-submit\" class=\"popup-submit\" style=\"float:none; margin-left:5px;\" value=\"Downvote Question\">\n                    </div>\n                </div>\n            </form>";
+
+        private generatePopup(): HTMLElement {
+            let wrapper = document.createElement("div");
+            wrapper.innerHTML = `
+            <div class="popup-close"><a title="close this popup (or hit Esc)">×</a></div>
+            <form>
+                <div>
+                    <h2 style="margin-bottom:12px;" class="c-move" data-target="se-draggable.handle">
+                        I am downvoting this question because...
+                    </h2>
+                    <ul class="action-list" style="display: flex; justify-content: space-between; flex-wrap: wrap; max-width: 600px">
+            
+                    </ul>
+                </div>
+                <div class="popup-actions">
+                    <div style="float:right">
+                        <input type="button" id="popup-cancel" class="popup-submit" style="float:none; margin-left:5px;" value="Cancel">
+                        <input type="submit" id="popup-submit" class="popup-submit" style="float:none; margin-left:5px;" value="Downvote Question">
+                    </div>
+                </div>
+            </form>`;
             wrapper.style.cssText = 'position: absolute; left: calc(50% - 347px);';
             wrapper.classList.add("popup");
             wrapper.classList.add("responsively-horizontally-centered-legacy-popup");
             wrapper.id = "popup-downvote-post";
             wrapper.setAttribute("data-controller", "se-draggable");
+
             return wrapper;
-        };
-        DownvoteHandler.prototype.generatePopupItems = function () {
-            var _this = this;
-            var actions = this.popup.querySelector(".action-list");
-            downvoteReasons.filter(function (x) { return x.flagType | _this.flagType; }).forEach(function (x, index) {
-                var li = document.createElement("li");
+        }
+
+        private generatePopupItems(): void {
+            let actions: HTMLElement = this.popup.querySelector(".action-list");
+
+            downvoteReasons.filter(x => x.flagType | this.flagType).forEach((x, index) => {
+                let li: HTMLElement = document.createElement("li");
                 li.style.width = "250px";
-                li.innerHTML = "\n                <label>\n                    <input type=\"radio\" class=\"js-flag-load-close\" name=\"reason\" data-reasonindex=\"" + index + "\"" + (x.url === "" ? " checked" : "") + ">\n                    <span class=\"action-name\">" + x.name + "</span>\n                </label>\n                <a style=\"margin-left: 23px\" href=\"" + x.url + "\" target=\"_blank\">Learn more</a>\n                ";
+                li.innerHTML = `
+                <label>
+                    <input type="radio" class="js-flag-load-close" name="reason" data-reasonindex="${index}"${x.url === "" ? " checked": ""}>
+                    <span class="action-name">${x.name}</span>
+                </label>
+                <a style="margin-left: 23px" href="${x.url}" target="_blank">Learn more</a>
+                `;
+
                 actions.appendChild(li);
             });
-        };
-        DownvoteHandler.prototype.attachEventHandler = function () {
+        }
+
+        private attachEventHandler(): void {
             this.downvoteState = this.getDownvoteState();
             this.downvoteButton.addEventListener("mouseup", this.mouseupCallback.bind(this));
-        };
-        DownvoteHandler.prototype.mouseupCallback = function () {
-            var _this = this;
-            var tempState = this.getDownvoteState();
+        }
+
+        private mouseupCallback(): void {
+            let tempState: boolean = this.getDownvoteState();
+
             if (!this.downvoteState && tempState) {
                 this.downvoteState = tempState;
                 return;
-            }
-            else
+            } else
                 this.downvoteState = tempState;
+
             this.openPopup();
+
             if (this.eventsInitialized)
                 return;
-            var cancelBtn = this.popup.querySelector("#popup-cancel");
-            var submitBtn = this.popup.querySelector("#popup-submit");
-            var closeBtn = document.querySelector(".popup-close");
-            cancelBtn.addEventListener("click", (function (e) {
-                _this.downvoteButton.click();
-                _this.closePopup();
+
+            let cancelBtn: HTMLElement = this.popup.querySelector("#popup-cancel");
+            let submitBtn: HTMLElement = this.popup.querySelector("#popup-submit");
+            let closeBtn: HTMLElement = document.querySelector(".popup-close");
+
+            cancelBtn.addEventListener("click", (e => {
+                this.downvoteButton.click();
+                this.closePopup();
                 e.preventDefault();
             }).bind(this));
-            submitBtn.addEventListener("click", (function (e) {
-                var selected = _this.popup.querySelector('input[name="reason"]:checked');
-                var index = Number(selected.dataset.reasonindex);
-                var selectedItem = downvoteReasons[index];
-                if (selectedItem.url != "" && !_this.commentUpIfCommentExist(selectedItem.url)) {
-                    _this.addCommentLink.click();
-                    var commentContainer = _this.commentSection.querySelector('textarea');
-                    var commentSubmit_1 = _this.commentSection.querySelector('button[type=submit].s-btn.s-btn__primary');
+
+            submitBtn.addEventListener("click", (e => {
+                let selected: HTMLElement = this.popup.querySelector('input[name="reason"]:checked');
+                let index: number = Number(selected.dataset.reasonindex);
+
+                let selectedItem = downvoteReasons[index];
+
+                if (selectedItem.url != "" && !this.commentUpIfCommentExist(selectedItem.url)) {
+                    this.addCommentLink.click();
+
+                    let commentContainer: HTMLTextAreaElement = this.commentSection.querySelector('textarea');
+                    let commentSubmit: HTMLElement = this.commentSection.querySelector('button[type=submit].s-btn.s-btn__primary');
+
                     commentContainer.value = selectedItem.reason.replace("{0}", selectedItem.url);
-                    setTimeout(function () {
-                        commentSubmit_1.click();
+
+                    setTimeout(() => {
+                        commentSubmit.click();
                     }, 100);
                 }
+
                 e.preventDefault();
-                _this.closePopup();
+                this.closePopup();
             }).bind(this));
-            closeBtn.addEventListener("click", (function () {
-                _this.closePopup();
+
+            closeBtn.addEventListener("click", (() => {
+                this.closePopup();
             }).bind(this));
+
             this.eventsInitialized = true;
-        };
-        DownvoteHandler.prototype.commentUpIfCommentExist = function (url) {
-            var comments = this.commentSection.querySelectorAll('.comment');
-            comments.forEach(function (elem) {
+        }
+
+        private commentUpIfCommentExist(url) {
+            let comments: NodeListOf<HTMLElement> = this.commentSection.querySelectorAll('.comment');
+
+            comments.forEach(elem => {
                 if (elem.innerHTML.indexOf(url) != -1) {
-                    var upVoteButton = elem.querySelector("a.comment-up");
+                    let upVoteButton: HTMLElement = elem.querySelector("a.comment-up");
                     upVoteButton.click();
                     return true;
                 }
             });
+
             return false;
-        };
-        DownvoteHandler.prototype.openPopup = function () {
-            var _this = this;
+        }
+
+        private openPopup(): void {
             DownvoteHandler.closeAllPopups();
+
             if (DownvoteHandler.getOpenPopupCount() === 0) {
                 DownvoteHandler.attachGlobalEvents();
             }
+
             DownvoteHandler.popupContainer.appendChild(this.popup);
+
             this.popup.style.top = this.calculateTop();
-            setTimeout(function () {
-                _this.popup.style.display = "block";
+
+            setTimeout(() => {
+                this.popup.style.display = "block";
             }, 10);
+
             this.isOpen = true;
-        };
-        DownvoteHandler.prototype.closePopup = function () {
+        }
+
+        private closePopup(): void {
             if (!this.isOpen)
                 return;
+
             DownvoteHandler.popupContainer.removeChild(this.popup);
+
             this.isOpen = false;
+
             if (DownvoteHandler.getOpenPopupCount() === 0) {
                 DownvoteHandler.detatchGlobalEvents();
             }
-        };
-        DownvoteHandler.prototype.calculateTop = function () {
-            var boundings = this.popup.getBoundingClientRect();
-            return "calc(50vh - " + boundings.height / 2 + "px + " + window.pageYOffset + "px)";
-        };
-        DownvoteHandler.prototype.getDownvoteState = function () {
+        }
+
+        private calculateTop(): string {
+            let boundings: DOMRect = this.popup.getBoundingClientRect();
+
+            return `calc(50vh - ${boundings.height / 2}px + ${window.pageYOffset}px)`
+        }
+
+        private getDownvoteState(): boolean {
             return this.downvoteButton.getAttribute("aria-pressed") == "true";
-        };
-        DownvoteHandler.downvoteHandlers = [];
-        DownvoteHandler.isInitialized = false;
-        return DownvoteHandler;
-    }());
+        }
+    }
+
     //#endregion
+
     //#region Startup
-    var observer = new MutationObserver(function (mutations, me) {
-        var btn = document.querySelector(".question .js-vote-down-btn");
+
+    let observer: MutationObserver = new MutationObserver(function (mutations: MutationRecord[], me: MutationObserver) {
+        let btn: HTMLElement = document.querySelector(".question .js-vote-down-btn");
         if (btn) {
             Core();
             me.disconnect();
             return;
         }
     });
+
     observer
         .observe(document, {
-        childList: true,
-        subtree: true
-    });
+            childList: true,
+            subtree: true
+        });
+
     //#endregion
+
     function Core() {
-        var question = document.querySelector(".question");
-        var answers = document.querySelectorAll("#answers .answer");
+        let question: HTMLElement = document.querySelector(".question");
+        let answers: NodeListOf<HTMLElement> = document.querySelectorAll("#answers .answer");
+
         new DownvoteHandler(question, FlagType.Question);
-        answers.forEach(function (answer) { return new DownvoteHandler(answer, FlagType.Answer); });
+        answers.forEach(answer => new DownvoteHandler(answer, FlagType.Answer));
     }
 })();
