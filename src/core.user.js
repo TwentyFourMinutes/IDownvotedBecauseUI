@@ -3,7 +3,7 @@
 // @namespace    https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepage     https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepageURL  https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
-// @version      v2.0
+// @version      v2.0.1
 // @description  A StackOverflow user script which adds a simple UI to justify the reason of the downvote.
 // @author       Twenty (https://github.com/TwentyFourMinutes, https://stackoverflow.com/users/10070647/twenty)
 // @include      https://*stackoverflow.com/questions/*
@@ -24,7 +24,7 @@
             name: "Being unresponsive...",
             reason: "I downvoted, because [the OP is unresponsive]({0}).",
             url: "https://idownvotedbecau.se/beingunresponsive",
-            flagType: FlagType.All
+            flagType: FlagType.Question
         }, {
             name: "Image of an exception...",
             reason: "I downvoted, because the [exception(s) are posted as image(s)]({0}).",
@@ -125,7 +125,7 @@
             this.isInitialized = true;
         };
         DownvoteHandler.isMouseOverPopup = function (mousePos) {
-            var isHovering = DownvoteHandler.downvoteHandlers.some(function (x) {
+            var isHovering = !DownvoteHandler.downvoteHandlers.some(function (x) {
                 var bounding = x.popup.getBoundingClientRect();
                 return x.isOpen && (bounding.left > mousePos.x || bounding.left + bounding.width < mousePos.x || bounding.top > mousePos.y || bounding.top + bounding.height < mousePos.y);
             });
@@ -153,7 +153,7 @@
             document.addEventListener("mousedown", DownvoteHandler.globalMouseDownCallback);
             document.addEventListener("keydown", DownvoteHandler.globalKeyDownCallback);
         };
-        DownvoteHandler.detatchGlobalEvents = function () {
+        DownvoteHandler.detachGlobalEvents = function () {
             document.removeEventListener("mousedown", DownvoteHandler.globalMouseDownCallback);
             document.removeEventListener("keydown", DownvoteHandler.globalKeyDownCallback);
         };
@@ -161,7 +161,7 @@
         DownvoteHandler.prototype.generatePopup = function () {
             var wrapper = document.createElement("div");
             wrapper.innerHTML = "\n            <div class=\"popup-close\"><a title=\"close this popup (or hit Esc)\">\u00D7</a></div>\n            <form>\n                <div>\n                    <h2 style=\"margin-bottom:12px;\" class=\"c-move\" data-target=\"se-draggable.handle\">\n                        I am downvoting this question because...\n                    </h2>\n                    <ul class=\"action-list\" style=\"display: flex; justify-content: space-between; flex-wrap: wrap; max-width: 600px\">\n            \n                    </ul>\n                </div>\n                <div class=\"popup-actions\">\n                    <div style=\"float:right\">\n                        <input type=\"button\" id=\"popup-cancel\" class=\"popup-submit\" style=\"float:none; margin-left:5px;\" value=\"Cancel\">\n                        <input type=\"submit\" id=\"popup-submit\" class=\"popup-submit\" style=\"float:none; margin-left:5px;\" value=\"Downvote Question\">\n                    </div>\n                </div>\n            </form>";
-            wrapper.style.cssText = 'position: absolute; left: calc(50% - 347px);';
+            wrapper.style.position = "absolute";
             wrapper.classList.add("popup");
             wrapper.classList.add("responsively-horizontally-centered-legacy-popup");
             wrapper.id = "popup-downvote-post";
@@ -171,7 +171,7 @@
         DownvoteHandler.prototype.generatePopupItems = function () {
             var _this = this;
             var actions = this.popup.querySelector(".action-list");
-            downvoteReasons.filter(function (x) { return x.flagType | _this.flagType; }).forEach(function (x, index) {
+            downvoteReasons.filter(function (x) { return (x.flagType & _this.flagType) !== 0; }).forEach(function (x, index) {
                 var li = document.createElement("li");
                 li.style.width = "250px";
                 li.innerHTML = "\n                <label>\n                    <input type=\"radio\" class=\"js-flag-load-close\" name=\"reason\" data-reasonindex=\"" + index + "\"" + (x.url === "" ? " checked" : "") + ">\n                    <span class=\"action-name\">" + x.name + "</span>\n                </label>\n                <a style=\"margin-left: 23px\" href=\"" + x.url + "\" target=\"_blank\">Learn more</a>\n                ";
@@ -242,6 +242,7 @@
             }
             DownvoteHandler.popupContainer.appendChild(this.popup);
             this.popup.style.top = this.calculateTop();
+            this.popup.style.left = this.calculateLeft();
             setTimeout(function () {
                 _this.popup.style.display = "block";
             }, 10);
@@ -253,12 +254,16 @@
             DownvoteHandler.popupContainer.removeChild(this.popup);
             this.isOpen = false;
             if (DownvoteHandler.getOpenPopupCount() === 0) {
-                DownvoteHandler.detatchGlobalEvents();
+                DownvoteHandler.detachGlobalEvents();
             }
         };
         DownvoteHandler.prototype.calculateTop = function () {
             var boundings = this.popup.getBoundingClientRect();
-            return "calc(50vh - " + boundings.height / 2 + "px + " + window.pageYOffset + "px)";
+            return "calc(50vh - " + boundings.height / 2 + "px + " + window.pageYOffset + "px - 50px)";
+        };
+        DownvoteHandler.prototype.calculateLeft = function () {
+            var boundings = this.popup.getBoundingClientRect();
+            return "calc(50% - " + boundings.width / 2 + "px)";
         };
         DownvoteHandler.prototype.getDownvoteState = function () {
             return this.downvoteButton.getAttribute("aria-pressed") == "true";

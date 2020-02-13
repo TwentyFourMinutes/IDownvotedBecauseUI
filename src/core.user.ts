@@ -3,7 +3,7 @@
 // @namespace    https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepage     https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
 // @homepageURL  https://github.com/TwentyFourMinutes/IDownvotedBecauseUI
-// @version      v2.0
+// @version      v2.0.1
 // @description  A StackOverflow user script which adds a simple UI to justify the reason of the downvote.
 // @author       Twenty (https://github.com/TwentyFourMinutes, https://stackoverflow.com/users/10070647/twenty)
 // @include      https://*stackoverflow.com/questions/*
@@ -27,7 +27,7 @@
             name: "Being unresponsive...",
             reason: "I downvoted, because [the OP is unresponsive]({0}).",
             url: "https://idownvotedbecau.se/beingunresponsive",
-            flagType: FlagType.All
+            flagType: FlagType.Question
         }, {
             name: "Image of an exception...",
             reason: "I downvoted, because the [exception(s) are posted as image(s)]({0}).",
@@ -151,7 +151,7 @@
         }
 
         private static isMouseOverPopup(mousePos: MouseEvent): boolean {
-            let isHovering: boolean = DownvoteHandler.downvoteHandlers.some(x => {
+            let isHovering: boolean = !DownvoteHandler.downvoteHandlers.some(x => {
                 let bounding: DOMRect = x.popup.getBoundingClientRect();
 
                 return x.isOpen && (bounding.left > mousePos.x || bounding.left + bounding.width < mousePos.x || bounding.top > mousePos.y || bounding.top + bounding.height < mousePos.y);
@@ -171,12 +171,13 @@
         }
 
         private static globalMouseDownCallback(e: MouseEvent): void {
-            if(!DownvoteHandler.isMouseOverPopup(e)){
+            if (!DownvoteHandler.isMouseOverPopup(e)) {
                 DownvoteHandler.closeAllPopups();
             }
         }
+
         private static globalKeyDownCallback(e: KeyboardEvent): void {
-            if(e.key == "Escape"){
+            if (e.key == "Escape") {
                 DownvoteHandler.closeAllPopups();
             }
         }
@@ -186,10 +187,11 @@
             document.addEventListener("keydown", DownvoteHandler.globalKeyDownCallback);
         }
 
-        private static detatchGlobalEvents(): void {
+        private static detachGlobalEvents(): void {
             document.removeEventListener("mousedown", DownvoteHandler.globalMouseDownCallback);
             document.removeEventListener("keydown", DownvoteHandler.globalKeyDownCallback);
         }
+
         //#endregion
 
         private generatePopup(): HTMLElement {
@@ -212,7 +214,7 @@
                     </div>
                 </div>
             </form>`;
-            wrapper.style.cssText = 'position: absolute; left: calc(50% - 347px);';
+            wrapper.style.position = "absolute";
             wrapper.classList.add("popup");
             wrapper.classList.add("responsively-horizontally-centered-legacy-popup");
             wrapper.id = "popup-downvote-post";
@@ -224,12 +226,12 @@
         private generatePopupItems(): void {
             let actions: HTMLElement = this.popup.querySelector(".action-list");
 
-            downvoteReasons.filter(x => x.flagType | this.flagType).forEach((x, index) => {
+            downvoteReasons.filter(x => (x.flagType & this.flagType) !== 0).forEach((x, index) => {
                 let li: HTMLElement = document.createElement("li");
                 li.style.width = "250px";
                 li.innerHTML = `
                 <label>
-                    <input type="radio" class="js-flag-load-close" name="reason" data-reasonindex="${index}"${x.url === "" ? " checked": ""}>
+                    <input type="radio" class="js-flag-load-close" name="reason" data-reasonindex="${index}"${x.url === "" ? " checked" : ""}>
                     <span class="action-name">${x.name}</span>
                 </label>
                 <a style="margin-left: 23px" href="${x.url}" target="_blank">Learn more</a>
@@ -322,6 +324,7 @@
             DownvoteHandler.popupContainer.appendChild(this.popup);
 
             this.popup.style.top = this.calculateTop();
+            this.popup.style.left = this.calculateLeft();
 
             setTimeout(() => {
                 this.popup.style.display = "block";
@@ -339,14 +342,20 @@
             this.isOpen = false;
 
             if (DownvoteHandler.getOpenPopupCount() === 0) {
-                DownvoteHandler.detatchGlobalEvents();
+                DownvoteHandler.detachGlobalEvents();
             }
         }
 
         private calculateTop(): string {
             let boundings: DOMRect = this.popup.getBoundingClientRect();
 
-            return `calc(50vh - ${boundings.height / 2}px + ${window.pageYOffset}px)`
+            return `calc(50vh - ${boundings.height / 2}px + ${window.pageYOffset}px - 50px)`
+        }
+
+        private calculateLeft(): string {
+            let boundings: DOMRect = this.popup.getBoundingClientRect();
+
+            return `calc(50% - ${boundings.width / 2}px)`
         }
 
         private getDownvoteState(): boolean {
